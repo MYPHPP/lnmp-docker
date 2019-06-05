@@ -1,0 +1,7 @@
+.idea
+.DS_Store
+.env
+mysql
+portainer
+log
+!www/localhost/
