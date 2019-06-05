@@ -167,7 +167,9 @@ log-error               = /var/lib/mysql/mysql.error.log
   ssl_certificate_key /etc/nginx/conf.d/ssl/awaimai.com/awaimai.key;
 - nginx.error.log
 ```
- an upstream response is buffered to a temporary file /var/cache/nginx/fastcgi_temp/3/11/0000010113 while reading upstream
+ an upstream response is buffered to a temporary file
+ 
+ /var/cache/nginx/fastcgi_temp/3/11/0000010113 while reading upstream
   To fix
   fastcgi_buffer_size 128k;
   fastcgi_buffers 8 128k;
