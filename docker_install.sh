@@ -61,6 +61,7 @@ do_install(){
 	else
 		yum -y install epel-release
 		yum -y install python-pip
+		pip install --upgrade pip
 	fi
 
 	if command_exists docker-compose; then
