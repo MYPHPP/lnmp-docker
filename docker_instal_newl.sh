@@ -49,9 +49,6 @@ do_install(){
 	else
 		curl -fsSL get.docker.com -o get-docker.sh
 		sh get-docker.sh --mirror Aliyun
-		systemctl enable docker
-		systemctl start docker
-		gpasswd -a ${USER} docker
 	fi
 
 	if command_exists docker-compose; then
@@ -67,6 +64,9 @@ do_install(){
 	else
 		yum -y install git
 	fi
+	systemctl enable docker
+    systemctl start docker
+    gpasswd -a ${USER} docker
 	mkdir -p $setup_path
 	cd $setup_path
 	git clone https://github.com/MYPHPP/lnmp-docker.git
