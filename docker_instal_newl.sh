@@ -73,6 +73,7 @@ do_install(){
 	cd lnmp-docker
 	cp env.sample .env 
 	docker-compose up
+
 }
 
 do_install
