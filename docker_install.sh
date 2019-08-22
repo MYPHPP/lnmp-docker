@@ -91,7 +91,7 @@ do_install(){
 	sudo gpasswd -a ${USER} docker
 	mkdir -p $setup_path
 	cd $setup_path
-	git clone https://github.com/MYPHPP/lnmp-docker.git
+	git clone https://github.com/MYPHPP/lnmp-docker.git dnmp
   	cd dnmp
 	cp env.sample .env 
 
