@@ -199,6 +199,7 @@ services:
     image: elasticsearch:${ELASTICSEARCH_VERSION}
     container_name: dnmp-elasticsearch
     environment:
+      - TZ="$TZ"
       - discovery.type=single-node
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
     volumes:
@@ -206,7 +207,6 @@ services:
     hostname: elasticsearch
     restart: always
     ports:
-      - TZ=$TZ
       - "${ELASTICSEARCH_HOST_PORT_C}:9200"
       - "${ELASTICSEARCH_HOST_PORT_S}:9300"
     networks:
