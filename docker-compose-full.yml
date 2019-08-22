@@ -24,10 +24,12 @@ services:
     ports:
       - "${Jenkins_HOST_PORT}:8080"
       - '50000:50000'
-    environment:
-      TZ: "$TZ"
     volumes:
       - ${Jenkins_DIR}:/var/jenkins_home
+      - ${LOCALTIME_DIR}:/etc/localtime:ro
+      - ${TIMEZONE_DIR}:/etc/timezone:ro
+    environment:
+      TZ: "$TZ"
     networks:
       docker_net:
         ipv4_address: ${Jenkins_IP}
@@ -48,7 +50,7 @@ services:
       - ${SOURCE_DIR}:/var/www/html/:rw
       - ${PHP73_PHP_CONF_FILE}:/usr/local/etc/php/php.ini:ro
       - ${PHP73_FPM_CONF_FILE}:/usr/local/etc/php-fpm.d/www.conf:rw
-      - ${PHP73_LOG_DIR}:/var/log/php
+      - ${PHP73_LOG_DIR}:/var/log/php   
     restart: always
     container_name: dnmp-php73
     cap_add:
@@ -57,6 +59,26 @@ services:
       docker_net:
         ipv4_address: ${PHP73_IP}
 
+  php56:
+    build:
+      context: .
+      args:
+        PHP_VERSION: ${PHP56_VERSION}
+        ALPINE_REPOSITORIES: ${ALPINE_REPOSITORIES}
+        PHP_EXTENSIONS: ${PHP56_EXTENSIONS}
+        MORE_EXTENSION_INSTALLER: php56.sh
+        TZ: "$TZ"
+    volumes:
+      - ${SOURCE_DIR}:/var/www/html/:rw
+      - ${PHP56_PHP_CONF_FILE}:/usr/local/etc/php/php.ini:ro
+      - ${PHP56_FPM_CONF_FILE}:/usr/local/etc/php-fpm.d/www.conf:rw
+      - ${PHP56_LOG_DIR}:/var/log/php
+    cap_add:
+      - SYS_PTRACE
+    container_name: dnmp-php56
+    networks:
+      docker_net:
+        ipv4_address: ${PHP56_IP}
 
   mysql:
     image: mysql:${MYSQL_VERSION}
@@ -75,7 +97,6 @@ services:
       MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD}"
       TZ: "$TZ"
 
-
   redis:
     image: redis:${REDIS_VERSION}
     ports:
@@ -90,6 +111,36 @@ services:
     networks:
       docker_net:
         ipv4_address: ${REDIS_IP}
+
+  mongodb:
+    image: mongo:${MONGODB_VERSION}
+    environment:
+        MONGO_INITDB_ROOT_USERNAME: "${MONGODB_INITDB_ROOT_USERNAME}"
+        MONGO_INITDB_ROOT_PASSWORD: "${MONGODB_INITDB_ROOT_PASSWORD}"
+        TZ: "$TZ"
+    volumes:
+      - ${MONGODB_DATA_DIR}:/data/db:rw
+      - ${MONGODB_DATA_DIR}/mongo_key:/mongo:rw
+    ports:
+       - "${MONGODB_HOST_PORT}:27017"
+    networks:
+        docker_net:
+        ipv4_address: ${Mongo_IP}
+    command:
+       --auth
+
+  adminmongo:
+    image: mrvautin/adminmongo
+    ports:
+      - "${ADMINMONGO_HOST_PORT}:1234"
+    environment:
+      - HOST=0.0.0.0
+      - DB_HOST=mongodb
+      - DB_PORT=27017
+    networks:
+        docker_net:
+        ipv4_address: ${ADMINMongo_IP}
+
   
   rabbitmq:
     image: rabbitmq:${RABBITMQ_VERSION}
@@ -99,7 +150,7 @@ services:
     environment:
       TZ: "$TZ"
       RABBITMQ_DEFAULT_USER: "${RABBITMQ_DEFAULT_USER}"
-      RABBITMQ_DEFAULT_PASS: "${RABBITMQ_DEFAULT_PASS}"
+      RABBITMQ_DEFAULT_PASS: "${RABBITMQ_DEFAULT_PASS}" 
     container_name: dnmp-rabbitmq
     logging:
       driver: "json-file"
@@ -120,7 +171,6 @@ services:
     environment:
       - PMA_HOST=mysql
       - PMA_PORT=3306
-      - TZ=$TZ
 
   phpredisadmin:
     image: erikdubbelboer/phpredisadmin:latest
@@ -132,7 +182,6 @@ services:
     environment:
       - REDIS_1_HOST=redis
       - REDIS_1_PORT=6379
-      - TZ=$TZ
 
   portainer:
     image: portainer/portainer:latest
@@ -145,7 +194,60 @@ services:
     networks:
       docker_net:
         ipv4_address: ${PORTAINER_IP}
-        
+
+  elasticsearch:
+    image: elasticsearch:${ELASTICSEARCH_VERSION}
+    container_name: dnmp-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    volumes:
+      - ${ELASTICSEARCH_DATA_DIR}:/usr/share/elasticsearch/data
+    hostname: elasticsearch
+    restart: always
+    ports:
+      - TZ=$TZ
+      - "${ELASTICSEARCH_HOST_PORT_C}:9200"
+      - "${ELASTICSEARCH_HOST_PORT_S}:9300"
+    networks:
+      docker_net:
+        ipv4_address: ${Elasticsearch_IP}   
+
+  kibana:
+    image: kibana:${KIBANA_VERSION}
+    container_name: dnmp-kibana
+    environment:
+      TZ: "$TZ"
+      elasticsearch.hosts: http://elasticsearch:9200
+    hostname: kibana
+    depends_on:
+      - elasticsearch
+    restart: always
+    ports:
+      - "${KIBANA_HOST}:5601"
+    networks:
+      docker_net:
+        ipv4_address: ${Kibana_IP}   
+
+  logstash:
+    image: logstash:${LOGSTASH_VERSION}
+    container_name: dnmp-logstash
+    hostname: logstash
+    restart: always
+    depends_on:
+      - elasticsearch
+    environment:
+      TZ: "$TZ"
+    ports:
+      - "${LOGSTASH_HOST_PORT_C}:9600"
+      - "${LOGSTASH_HOST_PORT_S}:5044"
+    networks:
+      docker_net:
+        ipv4_address: ${Logstash_IP}     
+
+volumes:
+  esdata:
+    driver: local
 
 networks:
   docker_net:
@@ -155,3 +257,4 @@ networks:
       config:
         -
           subnet: "${DOCKER_SUBNET}"
+          
